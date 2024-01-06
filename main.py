@@ -1,4 +1,4 @@
-from resources.configs.eight_core_config import config
+from resources.configs.sixteen_core_config import config
 from rts import RealTimeSystem
 
 def main():

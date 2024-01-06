@@ -6,7 +6,7 @@ def uunifast(u, task_criticalities, rng, hc_redundancy):
         n = len(task_criticalities)
         for i in range(1, n):
             nextSumU = sumU * rng.random() ** (1.0 / (n - i))
-            utilizations.append((sumU - nextSumU)/rep[task_criticalities[i]])
+            utilizations.append((sumU - nextSumU)/rep[task_criticalities[i-1]])
             sumU = nextSumU
 
         utilizations.append(sumU / rep[task_criticalities[-1]])

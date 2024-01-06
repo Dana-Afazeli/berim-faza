@@ -1,8 +1,8 @@
 class Core:
-    def __init__(self, id, capacity, tasks=[]):
+    def __init__(self, id, utilization):
         self.id = id
-        self.capacity = capacity
-        self._tasks = tasks
+        self.utilization = utilization
+        self._tasks = []
         self._hc_tasks = set()
 
     def schedule(self):
@@ -15,8 +15,10 @@ class Core:
         if task.criticality == 'high':
             self._hc_tasks.add(task.id)
 
-    def can_add_task(self, task):
-        if task.u > self.capacity:
+    def can_add_task(self, task, care_for_utilization=True):
+        if self.remaining_utilization < task.u:
+            return False
+        elif care_for_utilization and ((1 - self.remaining_utilization) > self.utilization):
             return False
         elif (task.criticality == 'high') and (task.id in self._hc_tasks):
             return False
@@ -24,8 +26,8 @@ class Core:
             return True
 
     @property
-    def remaining_capacity(self):
-        return self.capacity - sum(t.u for t in self._tasks)
+    def remaining_utilization(self):
+        return 1 - sum(t.u for t in self._tasks)
     
     def __str__(self):
-        return f'Core(id={self.id},capacity={self.capacity})'
+        return f'Core(id={self.id},utilization={self.utilization})'

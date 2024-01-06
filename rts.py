@@ -19,20 +19,30 @@ class RealTimeSystem:
         strategy = self._config['task_mapping_strategy']
         if strategy == 'WFD':
             def wfd_picker(task, cores):
-                for c in sorted(cores, key=lambda c: c.remaining_capacity, reverse=True):
-                    if c.can_add_task(task):
+                for c in sorted(cores, key=lambda c: c.remaining_utilization, reverse=True):
+                    if c.can_add_task(task, care_for_utilization=True):
                         return c
-                else:
-                    raise Exception(f'Task {task} cannot be scheduled on current cores')
+                
+                for c in sorted(cores, key=lambda c: c.remaining_utilization, reverse=True):
+                    if c.can_add_task(task, care_for_utilization=False):
+                        return c
+                
+                raise Exception(
+                    f'Task {task} cannot be scheduled on current cores with remaining capacity {sum(c.remaining_utilization for c in cores)}'
+                )
                 
             return wfd_picker
         elif strategy == 'FFD':
             def ffd_picker(task, cores):
                 for c in cores:
-                    if c.can_add_task(task):
+                    if c.can_add_task(task, care_for_utilization=True):
                         return c
-                else:
-                    raise Exception(f'Task {task} cannot be scheduled on current cores')
+                
+                for c in cores:
+                    if c.can_add_task(task, care_for_utilization=False):
+                        return c
+
+                raise Exception(f'Task {task} cannot be scheduled on current cores with remaining capacity {sum(c.remaining_utilization for c in cores)}')
             
             return ffd_picker
         else:
@@ -83,7 +93,12 @@ class RealTimeSystem:
 
     def init_tasks(self):
         self._create_tasks()
+        self.task_creation_report()
         self._map_tasks_to_cores()
+
+    def task_creation_report(self):
+        rep = {'high': self._calculate_hc_redundancy(), 'low': 1}
+        print(sum(t.u * rep[t.criticality] for t in self._tasks))
 
     def task_mapping_report(self):
         print('Mapping Results:')
