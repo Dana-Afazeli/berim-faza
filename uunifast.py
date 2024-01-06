@@ -1,47 +1,15 @@
-"""
-    This file has been taken from https://github.com/abolfazl9403/task_generation/blob/main/uunifast.py
-"""
-
-import csv
-import random
-
-
-def generate_uunifastdiscard(nsets: int, u: float, n: int, filename: str):
-    """
-    The UUniFast algorithm was proposed by Bini for generating task
-    utilizations on uniprocessor architectures.
-    The UUniFast-Discard algorithm extends it to multiprocessor by
-    discarding task sets containing any utilization that exceeds 1.
-    This algorithm is easy and widely used. However, it suffers from very
-    long computation times when n is close to u. Stafford's algorithm is
-    faster.
-    Args:
-        -   n  : The number of tasks in a task set.
-        -   u  : Total utilization of the task set.
-        -   nsets  : Number of sets to generate.
-        -   filename  : Name of the CSV file to save the results.
-    Returns   nsets   of   n   task utilizations.
-    """
-    sets = []
-    while len(sets) < nsets:
+def uunifast(u, task_criticalities, rng, hc_redundancy):
+    rep = {'high':hc_redundancy, 'low':1}
+    while True:
         utilizations = []
         sumU = u
+        n = len(task_criticalities)
         for i in range(1, n):
-            nextSumU = sumU * random.random() ** (1.0 / (n - i))
-            utilizations.append(sumU - nextSumU)
+            nextSumU = sumU * rng.random() ** (1.0 / (n - i))
+            utilizations.append((sumU - nextSumU)/rep[task_criticalities[i]])
             sumU = nextSumU
-        utilizations.append(sumU)
+
+        utilizations.append(sumU / rep[task_criticalities[-1]])
         
         if all(ut <= 1 for ut in utilizations):
-            sets.append(utilizations)
-
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(['Task ' + str(i) for i in range(1, n+1)])
-        for utilizations in sets:
-            writer.writerow(utilizations)
-
-    return sets
-
-
-utilizations = generate_uunifastdiscard(nsets=5, u=0.1, n=10, filename='task_utilizations.csv')
+            return utilizations
